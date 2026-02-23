@@ -20,8 +20,13 @@ A browser-based collection of mini-games built with plain HTML/CSS/JavaScript an
 - `games/asteroids/GAME_SPEC.md`: Asteroids-specific rules/spec.
 - `games/galaxy/galaxy.js`: Galaxy implementation.
 - `games/galaxy/GAME_SPEC.md`: Galaxy-specific rules/spec.
+- `games/pacman/maze_validator.js`: PacMan maze validation script (walkability/connectivity checks).
+- `games/pacman/pacman.js`: PacMan implementation.
+- `games/pacman/GAME_SPEC.md`: PacMan-specific rules/spec.
 - `games/sokoban/sokoban.js`: Sokoban implementation.
 - `games/sokoban/GAME_SPEC.md`: Sokoban-specific rules/spec.
+- `games/xonix/xonix.js`: Xonix implementation.
+- `games/xonix/GAME_SPEC.md`: Xonix-specific rules/spec.
 - `AGENTS.md`: repository-level agent workflow rules.
 
 ## Architecture
