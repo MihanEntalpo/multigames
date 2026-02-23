@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mini Games Collection</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="page-header">
+        <h1>Сборник мини-игр</h1>
+      </header>
+
+      <div class="app-layout">
+        <aside class="sidebar">
+          <h2>Игры</h2>
+          <ul id="game-menu" class="game-menu"></ul>
+        </aside>
+
+        <main class="game-area">
+          <p id="router-status" class="router-status">Загрузка...</p>
+          <div class="canvas-wrap">
+            <canvas id="game-canvas" aria-label="Игровой canvas"></canvas>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <script src="./core/storage.js"></script>
+    <script src="./core/canvas_utils.js"></script>
+    <script src="./core/game_manager.js"></script>
+    <script src="./games/tetris/tetris.js"></script>
+    <script src="./games/arkanoid/arkanoid.js"></script>
+    <script src="./games/asteroids/asteroids.js"></script>
+    <script src="./games/galaxy/galaxy.js"></script>
+    <script src="./games/sokoban/sokoban.js"></script>
+    <script src="./main.js"></script>
+  </body>
+</html>

@@ -1,0 +1,142 @@
+:root {
+  --bg-top: #102133;
+  --bg-bottom: #0a141f;
+  --panel: rgba(12, 25, 40, 0.86);
+  --panel-border: rgba(117, 165, 191, 0.35);
+  --text-main: #e7f2ff;
+  --text-muted: #9ab4c8;
+  --accent: #f0a33f;
+  --accent-strong: #ffd38a;
+  --canvas-bg: #08111d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: "Trebuchet MS", "Lucida Sans Unicode", "Segoe UI", sans-serif;
+  color: var(--text-main);
+  background: linear-gradient(170deg, var(--bg-top), var(--bg-bottom));
+}
+
+body {
+  min-height: 100vh;
+}
+
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.page-header h1 {
+  margin: 0 0 16px;
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  letter-spacing: 0.02em;
+}
+
+.app-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 16px;
+}
+
+.sidebar,
+.game-area,
+.single-game {
+  border: 1px solid var(--panel-border);
+  border-radius: 14px;
+  background: var(--panel);
+  backdrop-filter: blur(2px);
+}
+
+.sidebar {
+  padding: 16px;
+}
+
+.sidebar h2 {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.game-menu {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.game-menu a {
+  display: block;
+  text-decoration: none;
+  color: var(--text-main);
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(154, 180, 200, 0.3);
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.game-menu a:hover,
+.game-menu a.active {
+  background: rgba(240, 163, 63, 0.2);
+  border-color: var(--accent);
+}
+
+.game-area,
+.single-game {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.router-status {
+  min-height: 1.2em;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.canvas-wrap {
+  width: 100%;
+  min-height: 520px;
+  height: min(72vh, 760px);
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 20% 15%, #172f45, var(--canvas-bg) 55%);
+  border-radius: 10px;
+}
+
+.page-link {
+  color: var(--accent-strong);
+  text-decoration: none;
+  width: fit-content;
+}
+
+.page-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 900px) {
+  .app-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .canvas-wrap {
+    min-height: 420px;
+    height: min(65vh, 680px);
+  }
+}

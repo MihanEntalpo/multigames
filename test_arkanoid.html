@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Arkanoid Test Page</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="page-header">
+        <h1>Arkanoid Debug Run</h1>
+      </header>
+
+      <main class="single-game">
+        <a class="page-link" href="./index.html">Back to index</a>
+        <div class="canvas-wrap">
+          <canvas id="arkanoid-canvas" aria-label="Arkanoid test canvas"></canvas>
+        </div>
+      </main>
+    </div>
+
+    <script src="./core/storage.js"></script>
+    <script src="./core/canvas_utils.js"></script>
+    <script src="./games/arkanoid/arkanoid.js"></script>
+    <script>
+      const canvas = document.getElementById('arkanoid-canvas');
+      const arkanoid = new window.Minigames.ArkanoidGame();
+      arkanoid.run(canvas);
+
+      window.addEventListener('beforeunload', () => {
+        arkanoid.stop();
+      });
+    </script>
+  </body>
+</html>
