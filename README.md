@@ -14,6 +14,8 @@
   - `asteroids`
   - `galaxy`
   - `pacman`
+  - `frogger`
+  - `snake`
   - `sokoban`
   - `xonix`
 
@@ -49,6 +51,8 @@
    ├─ asteroids/
    ├─ galaxy/
    ├─ pacman/
+   ├─ frogger/
+   ├─ snake/
    ├─ sokoban/
    └─ xonix/
 ```

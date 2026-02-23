@@ -18,9 +18,9 @@
       '#.....#.#.#.#.....#',
       '###.#.#.#.#.#.#.###',
       '#...#...#.#...#...#',
-      '#.#....## ##....#.#',
-      '#.#....#GGG#....#.#',
-      '#.#....#####....#.#',
+      '#.#...##  ##....#.#',
+      '#.#...#GGGG#....#.#',
+      '#.#...######....#.#',
       '#...#....P....#...#',
       '###.#.#.#.#.#.#.###',
       '#.....#.#.#.#.....#',
@@ -35,9 +35,9 @@
       '#.....#.#.#.#.....#',
       '###...#.#.#.#...###',
       '#...#...#.#...#...#',
-      '#.#....## ##....#.#',
-      '#.#....#GGG#....#.#',
-      '#.#....#####....#.#',
+      '#.#...##  ##....#.#',
+      '#.#...#GGGG#....#.#',
+      '#.#...######....#.#',
       '#...#....P....#...#',
       '###.#.#.#.#.#.#.###',
       '#.....#.#.#.#.....#',
@@ -52,9 +52,9 @@
       '#.....#.#.#.#.....#',
       '###.#.#.....#.#.###',
       '#...#...#.#...#...#',
-      '#.#....## ##....#.#',
-      '#.#....#GGG#....#.#',
-      '#.#....#####....#.#',
+      '#.#...##  ##....#.#',
+      '#.#...#GGGG#....#.#',
+      '#.#...######....#.#',
       '#...#....P....#...#',
       '###.#.#.....#.#.###',
       '#.....#.#.#.#.....#',
@@ -69,9 +69,9 @@
       '#.....#.#.#.#.....#',
       '###...#.#.#.#...###',
       '#.......#.#.......#',
-      '#.#....## ##....#.#',
-      '#.#....#GGG#....#.#',
-      '#.#....#####....#.#',
+      '#.#...##  ##....#.#',
+      '#.#...#GGGG#....#.#',
+      '#.#...######....#.#',
       '#...#....P....#...#',
       '###...#.#.#.#...###',
       '#.....#.#.#.#.....#',
@@ -89,6 +89,14 @@
   const GHOST_FRIGHT_SPEED = 3.2;
   const GHOST_EYES_SPEED = 6.6;
   const POWER_DURATION_SEC = 8;
+  const POWER_FLASH_WINDOW_SEC = 1;
+  const POWER_FLASH_INTERVAL_SEC = 0.12;
+
+  const DEATH_HOLD_SEC = 0.18;
+  const DEATH_OPEN_SEC = 0.44;
+  const DEATH_INVERT_SEC = 0.42;
+  const DEATH_BURST_SEC = 0.52;
+  const DEATH_TOTAL_SEC = DEATH_HOLD_SEC + DEATH_OPEN_SEC + DEATH_INVERT_SEC + DEATH_BURST_SEC;
 
   const START_LIVES = 3;
   const SCORE_PELLET = 10;
@@ -102,8 +110,22 @@
     bestLevel: 1,
   };
 
-  const GHOST_COLORS = ['#ff4d6d', '#6bd6ff', '#ff9f1c', '#b388ff'];
-  const GHOST_SPEED_FACTORS = [0.95, 1.0, 1.05, 1.1];
+  const GHOST_PROFILES = [
+    { id: 'blinky', color: '#ff4d6d', speedFactor: 1.06 },
+    { id: 'pinky', color: '#ff9fd8', speedFactor: 1.0 },
+    { id: 'inky', color: '#6bd6ff', speedFactor: 0.98 },
+    { id: 'clyde', color: '#ffb347', speedFactor: 0.94 },
+  ];
+  const GHOST_MODE_SEQUENCE = [
+    { mode: 'scatter', duration: 7 },
+    { mode: 'chase', duration: 20 },
+    { mode: 'scatter', duration: 7 },
+    { mode: 'chase', duration: 20 },
+    { mode: 'scatter', duration: 5 },
+    { mode: 'chase', duration: 20 },
+    { mode: 'scatter', duration: 5 },
+    { mode: 'chase', duration: Infinity },
+  ];
 
   const DIR_UP = { dx: 0, dy: -1, key: 'up' };
   const DIR_DOWN = { dx: 0, dy: 1, key: 'down' };
@@ -181,6 +203,7 @@
       this.rows = this.mapTemplate.length;
 
       this.walls = [];
+      this.ghostDoor = [];
       this.pellets = [];
       this.pelletCount = 0;
 
@@ -210,6 +233,11 @@
       this.lastTimestamp = 0;
       this.playerChompDistance = 0;
       this.lastMazeTemplateIndex = -1;
+      this.ghostBehaviorMode = 'scatter';
+      this.ghostModePhaseIndex = 0;
+      this.ghostModePhaseTimer = 0;
+      this.deathTimer = 0;
+      this.deathCenter = { x: 0, y: 0 };
 
       this.boundFrame = this.frame.bind(this);
       this.boundKeyDown = this.onKeyDown.bind(this);
@@ -329,6 +357,7 @@
 
     setupMapTemplate() {
       this.walls = Array.from({ length: this.rows }, () => Array(this.cols).fill(TILE_EMPTY));
+      this.ghostDoor = Array.from({ length: this.rows }, () => Array(this.cols).fill(0));
       this.pellets = Array.from({ length: this.rows }, () => Array(this.cols).fill(0));
       this.ghostSpawns = [];
       this.ghostHouse = null;
@@ -364,16 +393,28 @@
       }
 
       if (this.ghostSpawns.length > 0 && Number.isFinite(minGhostX)) {
-        const doorX = Math.floor((minGhostX + maxGhostX) / 2);
+        const doorLeft = clamp(minGhostX + 1, minGhostX, maxGhostX);
+        const doorRight = clamp(maxGhostX - 1, minGhostX, maxGhostX);
+        const doorCenterX = (doorLeft + doorRight + 1) / 2;
         const doorY = minGhostY - 1;
         this.ghostHouse = {
           minX: minGhostX,
           maxX: maxGhostX,
           minY: minGhostY,
           maxY: maxGhostY,
-          doorX,
+          doorLeft,
+          doorRight,
+          doorCenterX,
           doorY,
         };
+
+        if (doorY >= 0 && doorY < this.rows) {
+          for (let x = doorLeft; x <= doorRight; x += 1) {
+            if (x >= 0 && x < this.cols && this.walls[doorY][x] !== TILE_WALL) {
+              this.ghostDoor[doorY][x] = 1;
+            }
+          }
+        }
       }
     }
 
@@ -403,6 +444,7 @@
       this.powerTimer = 0;
       this.state = 'ready';
       this.playerChompDistance = 0;
+      this.deathTimer = 0;
 
       this.createNewMaze();
       this.startWave(true);
@@ -419,20 +461,28 @@
       this.player.dir = DIR_LEFT;
       this.player.nextDir = DIR_LEFT;
       this.playerChompDistance = 0;
+      this.deathTimer = 0;
+      this.deathCenter.x = this.playerSpawn.x;
+      this.deathCenter.y = this.playerSpawn.y;
 
-      this.ghosts = this.ghostSpawns.map((spawn, index) => ({
-        x: spawn.x,
-        y: spawn.y,
-        spawnX: spawn.x,
-        spawnY: spawn.y,
-        dir: DIRECTIONS[(index + 1) % DIRECTIONS.length],
-        color: GHOST_COLORS[index % GHOST_COLORS.length],
-        speedFactor: GHOST_SPEED_FACTORS[index % GHOST_SPEED_FACTORS.length],
-        mode: 'normal',
-      }));
+      this.ghosts = this.ghostSpawns.map((spawn, index) => {
+        const profile = GHOST_PROFILES[index % GHOST_PROFILES.length];
+        return {
+          x: spawn.x,
+          y: spawn.y,
+          spawnX: spawn.x,
+          spawnY: spawn.y,
+          dir: DIRECTIONS[(index + 1) % DIRECTIONS.length],
+          color: profile.color,
+          ghostId: profile.id,
+          speedFactor: profile.speedFactor,
+          mode: 'normal',
+        };
+      });
 
       this.powerTimer = 0;
       this.state = 'ready';
+      this.resetGhostModeCycle();
       this.saveProgressIfNeeded();
     }
 
@@ -490,6 +540,85 @@
       };
     }
 
+    resetGhostModeCycle() {
+      this.ghostBehaviorMode = GHOST_MODE_SEQUENCE[0].mode;
+      this.ghostModePhaseIndex = 0;
+      this.ghostModePhaseTimer = 0;
+    }
+
+    advanceGhostModeCycle(dt) {
+      if (this.powerTimer > 0) {
+        return;
+      }
+
+      let remaining = dt;
+      while (remaining > 0 && this.ghostModePhaseIndex < GHOST_MODE_SEQUENCE.length) {
+        const phase = GHOST_MODE_SEQUENCE[this.ghostModePhaseIndex];
+        if (!Number.isFinite(phase.duration)) {
+          this.ghostBehaviorMode = phase.mode;
+          return;
+        }
+
+        const leftInPhase = phase.duration - this.ghostModePhaseTimer;
+        if (remaining < leftInPhase) {
+          this.ghostModePhaseTimer += remaining;
+          this.ghostBehaviorMode = phase.mode;
+          return;
+        }
+
+        remaining -= leftInPhase;
+        this.ghostModePhaseIndex = Math.min(this.ghostModePhaseIndex + 1, GHOST_MODE_SEQUENCE.length - 1);
+        this.ghostModePhaseTimer = 0;
+        this.ghostBehaviorMode = GHOST_MODE_SEQUENCE[this.ghostModePhaseIndex].mode;
+      }
+    }
+
+    isFrightenedEdible() {
+      if (this.powerTimer <= 0) {
+        return false;
+      }
+      if (this.powerTimer > POWER_FLASH_WINDOW_SEC) {
+        return true;
+      }
+
+      const elapsedInFlash = POWER_FLASH_WINDOW_SEC - this.powerTimer;
+      const phase = Math.floor(elapsedInFlash / POWER_FLASH_INTERVAL_SEC);
+      return phase % 2 === 0;
+    }
+
+    startDeathSequence() {
+      if (this.state === 'dying' || this.state === 'gameover') {
+        return;
+      }
+
+      this.state = 'dying';
+      this.deathTimer = 0;
+      this.deathCenter.x = this.player.x;
+      this.deathCenter.y = this.player.y;
+      this.player.dir = DIR_UP;
+      this.powerTimer = 0;
+    }
+
+    updateDying(dt) {
+      this.deathTimer += dt;
+      if (this.deathTimer >= DEATH_TOTAL_SEC) {
+        this.completeDeathSequence();
+      }
+    }
+
+    completeDeathSequence() {
+      this.lives -= 1;
+
+      if (this.lives <= 0) {
+        this.lives = 0;
+        this.state = 'gameover';
+        this.saveProgressIfNeeded();
+        return;
+      }
+
+      this.startWave(false);
+    }
+
     frame(timestamp) {
       if (!this.isRunning) {
         return;
@@ -500,6 +629,8 @@
 
       if (this.state === 'playing') {
         this.update(dt);
+      } else if (this.state === 'dying') {
+        this.updateDying(dt);
       }
 
       this.render();
@@ -510,16 +641,18 @@
       if (this.powerTimer > 0) {
         this.powerTimer = Math.max(0, this.powerTimer - dt);
       }
+      this.advanceGhostModeCycle(dt);
 
       this.updatePlayer(dt);
       this.consumePelletAtPlayer();
 
-      const frightened = this.powerTimer > 0;
+      const frightenedMovement = this.powerTimer > 0;
+      const frightenedEdible = this.isFrightenedEdible();
       for (let i = 0; i < this.ghosts.length; i += 1) {
-        this.updateGhost(this.ghosts[i], dt, frightened);
+        this.updateGhost(this.ghosts[i], dt, frightenedMovement);
       }
 
-      this.handlePlayerGhostCollisions(frightened);
+      this.handlePlayerGhostCollisions(frightenedEdible);
     }
 
     wallAt(tx, ty) {
@@ -527,6 +660,17 @@
         return true;
       }
       return this.walls[ty][tx] === TILE_WALL;
+    }
+
+    doorAt(tx, ty) {
+      if (tx < 0 || ty < 0 || tx >= this.cols || ty >= this.rows) {
+        return false;
+      }
+      return this.ghostDoor[ty][tx] === 1;
+    }
+
+    playerBlockedAt(tx, ty) {
+      return this.wallAt(tx, ty) || this.doorAt(tx, ty);
     }
 
     isNearCenter(entity) {
@@ -540,10 +684,10 @@
       entity.y = Math.floor(entity.y) + 0.5;
     }
 
-    canMoveFromCenter(cx, cy, dir) {
+    canMoveFromCenter(cx, cy, dir, forPlayer) {
       const tx = Math.floor(cx + dir.dx);
       const ty = Math.floor(cy + dir.dy);
-      return !this.wallAt(tx, ty);
+      return forPlayer ? !this.playerBlockedAt(tx, ty) : !this.wallAt(tx, ty);
     }
 
     updateAxisMovement(entity, dt, speed) {
@@ -551,10 +695,11 @@
       entity.y += entity.dir.dy * speed * dt;
     }
 
-    resolveWallCollision(entity) {
+    resolveWallCollision(entity, forPlayer) {
       const tx = Math.floor(entity.x);
       const ty = Math.floor(entity.y);
-      if (this.wallAt(tx, ty)) {
+      const blocked = forPlayer ? this.playerBlockedAt(tx, ty) : this.wallAt(tx, ty);
+      if (blocked) {
         this.snapToCenter(entity);
       }
     }
@@ -568,17 +713,17 @@
       if (this.isNearCenter(p)) {
         this.snapToCenter(p);
 
-        if (p.nextDir && this.canMoveFromCenter(p.x, p.y, p.nextDir)) {
+        if (p.nextDir && this.canMoveFromCenter(p.x, p.y, p.nextDir, true)) {
           p.dir = p.nextDir;
         }
 
-        if (!this.canMoveFromCenter(p.x, p.y, p.dir)) {
+        if (!this.canMoveFromCenter(p.x, p.y, p.dir, true)) {
           p.dir = { dx: 0, dy: 0, key: 'none' };
         }
       }
 
       this.updateAxisMovement(p, dt, speed);
-      this.resolveWallCollision(p);
+      this.resolveWallCollision(p, true);
 
       const moved = Math.hypot(p.x - prevX, p.y - prevY);
       this.playerChompDistance += moved;
@@ -665,10 +810,10 @@
         const ty = Math.floor(ghost.y);
         const inHouse = tx >= house.minX && tx <= house.maxX && ty >= house.minY && ty <= house.maxY;
         if (inHouse) {
-          return this.chooseDirTowardsTarget(ghost, dirs, house.doorX + 0.5, house.doorY + 0.5);
+          return this.chooseDirTowardsTarget(ghost, dirs, house.doorCenterX, house.doorY + 0.5);
         }
 
-        if (tx === house.doorX && ty === house.doorY) {
+        if (ty === house.doorY && tx >= house.doorLeft && tx <= house.doorRight) {
           if (this.canMoveFromCenter(ghost.x, ghost.y, DIR_UP)) {
             return DIR_UP;
           }
@@ -676,25 +821,109 @@
       }
 
       if (frightened) {
-        const idx = Math.floor(Math.random() * dirs.length);
-        return dirs[idx];
+        const playerTile = this.getPlayerTile();
+        return this.chooseDirAwayFromTarget(ghost, dirs, playerTile.x + 0.5, playerTile.y + 0.5);
       }
 
-      let best = dirs[0];
-      let bestScore = Infinity;
+      const target = this.getGhostTargetTile(ghost);
+      return this.chooseDirTowardsTarget(ghost, dirs, target.x + 0.5, target.y + 0.5);
+    }
 
-      for (let i = 0; i < dirs.length; i += 1) {
-        const d = dirs[i];
-        const nx = Math.floor(ghost.x) + d.dx + 0.5;
-        const ny = Math.floor(ghost.y) + d.dy + 0.5;
-        const s = distSquared(nx, ny, this.player.x, this.player.y);
-        if (s < bestScore) {
-          bestScore = s;
-          best = d;
+    getGhostById(ghostId) {
+      for (let i = 0; i < this.ghosts.length; i += 1) {
+        if (this.ghosts[i].ghostId === ghostId) {
+          return this.ghosts[i];
         }
       }
+      return null;
+    }
 
-      return best;
+    getPlayerTile() {
+      return {
+        x: Math.floor(this.player.x),
+        y: Math.floor(this.player.y),
+      };
+    }
+
+    getPlayerLookAheadTile(steps, applyUpLeftBug) {
+      const playerTile = this.getPlayerTile();
+      const dir = this.player.dir || DIR_LEFT;
+
+      if (applyUpLeftBug && dir === DIR_UP) {
+        return {
+          x: playerTile.x - steps,
+          y: playerTile.y - steps,
+        };
+      }
+
+      return {
+        x: playerTile.x + dir.dx * steps,
+        y: playerTile.y + dir.dy * steps,
+      };
+    }
+
+    clampTileToBoard(tile) {
+      return {
+        x: clamp(tile.x, 1, this.cols - 2),
+        y: clamp(tile.y, 1, this.rows - 2),
+      };
+    }
+
+    getScatterTargetForGhost(ghost) {
+      if (ghost.ghostId === 'blinky') {
+        return { x: this.cols - 2, y: 1 };
+      }
+      if (ghost.ghostId === 'pinky') {
+        return { x: 1, y: 1 };
+      }
+      if (ghost.ghostId === 'inky') {
+        return { x: this.cols - 2, y: this.rows - 2 };
+      }
+      return { x: 1, y: this.rows - 2 };
+    }
+
+    getChaseTargetForGhost(ghost) {
+      const playerTile = this.getPlayerTile();
+
+      if (ghost.ghostId === 'blinky') {
+        return playerTile;
+      }
+
+      if (ghost.ghostId === 'pinky') {
+        return this.getPlayerLookAheadTile(4, true);
+      }
+
+      if (ghost.ghostId === 'inky') {
+        const blinky = this.getGhostById('blinky') || ghost;
+        const blinkyTile = {
+          x: Math.floor(blinky.x),
+          y: Math.floor(blinky.y),
+        };
+        const ahead = this.getPlayerLookAheadTile(2, true);
+        const vx = ahead.x - blinkyTile.x;
+        const vy = ahead.y - blinkyTile.y;
+        return {
+          x: ahead.x + vx,
+          y: ahead.y + vy,
+        };
+      }
+
+      const ghostTile = {
+        x: Math.floor(ghost.x),
+        y: Math.floor(ghost.y),
+      };
+      const distanceToPlayer = Math.hypot(playerTile.x - ghostTile.x, playerTile.y - ghostTile.y);
+      if (distanceToPlayer >= 8) {
+        return playerTile;
+      }
+      return this.getScatterTargetForGhost(ghost);
+    }
+
+    getGhostTargetTile(ghost) {
+      const rawTarget = this.ghostBehaviorMode === 'scatter'
+        ? this.getScatterTargetForGhost(ghost)
+        : this.getChaseTargetForGhost(ghost);
+      return this.clampTileToBoard(rawTarget);
     }
 
     chooseDirTowardsTarget(ghost, dirs, targetX, targetY) {
@@ -707,6 +936,24 @@
         const ny = Math.floor(ghost.y) + d.dy + 0.5;
         const s = distSquared(nx, ny, targetX, targetY);
         if (s < bestScore) {
+          bestScore = s;
+          best = d;
+        }
+      }
+
+      return best;
+    }
+
+    chooseDirAwayFromTarget(ghost, dirs, targetX, targetY) {
+      let best = dirs[0];
+      let bestScore = -Infinity;
+
+      for (let i = 0; i < dirs.length; i += 1) {
+        const d = dirs[i];
+        const nx = Math.floor(ghost.x) + d.dx + 0.5;
+        const ny = Math.floor(ghost.y) + d.dy + 0.5;
+        const s = distSquared(nx, ny, targetX, targetY);
+        if (s > bestScore) {
           bestScore = s;
           best = d;
         }
@@ -875,23 +1122,10 @@
           g.dir = DIRECTIONS[(i + 2) % DIRECTIONS.length];
           this.saveProgressIfNeeded();
         } else {
-          this.loseLife();
+          this.startDeathSequence();
           return;
         }
       }
-    }
-
-    loseLife() {
-      this.lives -= 1;
-
-      if (this.lives <= 0) {
-        this.lives = 0;
-        this.state = 'gameover';
-        this.saveProgressIfNeeded();
-        return;
-      }
-
-      this.startWave(false);
     }
 
     onKeyDown(event) {
@@ -915,6 +1149,10 @@
 
       if (event.code === 'KeyR') {
         this.resetRun();
+        return;
+      }
+
+      if (this.state === 'dying') {
         return;
       }
 
@@ -993,6 +1231,14 @@
         }
       }
 
+      if (this.ghostHouse) {
+        const py = this.layout.boardY + this.ghostHouse.doorY * tile + tile * 0.46;
+        const leftPx = this.layout.boardX + this.ghostHouse.doorLeft * tile + 2;
+        const widthPx = (this.ghostHouse.doorRight - this.ghostHouse.doorLeft + 1) * tile - 4;
+        ctx.fillStyle = '#ffd2ee';
+        ctx.fillRect(leftPx, py, widthPx, Math.max(2, Math.floor(tile * 0.1)));
+      }
+
       for (let y = 0; y < this.rows; y += 1) {
         for (let x = 0; x < this.cols; x += 1) {
           const p = this.pellets[y][x];
@@ -1018,6 +1264,11 @@
     }
 
     drawPlayer() {
+      if (this.state === 'dying') {
+        this.drawPlayerDeathAnimation();
+        return;
+      }
+
       const ctx = this.ctx;
       const tile = this.layout.tilePx;
       const px = this.layout.boardX + this.player.x * tile;
@@ -1039,18 +1290,88 @@
       const isMoving = this.player.dir.dx !== 0 || this.player.dir.dy !== 0;
       const mouth = isMoving ? 0.06 + chompCycle * 0.34 : 0.08;
 
-      ctx.fillStyle = '#ffd43b';
+      this.drawPacmanShape(px, py, radius, angleBase, mouth, '#ffd43b');
+    }
+
+    drawPacmanShape(px, py, radius, angleBase, mouth, color) {
+      const ctx = this.ctx;
+      const safeMouth = clamp(mouth, 0.01, Math.PI - 0.06);
+      ctx.fillStyle = color;
       ctx.beginPath();
       ctx.moveTo(px, py);
-      ctx.arc(px, py, radius, angleBase + mouth, angleBase - mouth + Math.PI * 2, false);
+      ctx.arc(px, py, radius, angleBase + safeMouth, angleBase - safeMouth + Math.PI * 2, false);
       ctx.closePath();
       ctx.fill();
+    }
+
+    drawPlayerDeathAnimation() {
+      const tile = this.layout.tilePx;
+      const px = this.layout.boardX + this.deathCenter.x * tile;
+      const py = this.layout.boardY + this.deathCenter.y * tile;
+      const baseRadius = tile * 0.43;
+      const faceUp = -Math.PI / 2;
+      const t = this.deathTimer;
+
+      if (t < DEATH_HOLD_SEC) {
+        this.drawPacmanShape(px, py, baseRadius, faceUp, 0.08, '#ffd43b');
+        return;
+      }
+
+      if (t < DEATH_HOLD_SEC + DEATH_OPEN_SEC) {
+        const p = (t - DEATH_HOLD_SEC) / DEATH_OPEN_SEC;
+        const mouth = 0.08 + p * (Math.PI - 0.14);
+        this.drawPacmanShape(px, py, baseRadius, faceUp, mouth, '#ffd43b');
+        return;
+      }
+
+      if (t < DEATH_HOLD_SEC + DEATH_OPEN_SEC + DEATH_INVERT_SEC) {
+        const p = (t - DEATH_HOLD_SEC - DEATH_OPEN_SEC) / DEATH_INVERT_SEC;
+        const radius = baseRadius * (1 - p * 0.7);
+
+        // "Inside-out" phase: body turns dark and the remaining yellow sliver collapses.
+        this.drawPacmanShape(px, py, radius, faceUp, Math.PI - 0.08, '#06111c');
+        const sliverMouth = Math.PI - 0.08 - p * (Math.PI - 0.14);
+        this.drawPacmanShape(px, py, radius * (1 - p * 0.25), faceUp + Math.PI, sliverMouth, '#ffd43b');
+        return;
+      }
+
+      const p = clamp((t - DEATH_HOLD_SEC - DEATH_OPEN_SEC - DEATH_INVERT_SEC) / DEATH_BURST_SEC, 0, 1);
+      const ctx = this.ctx;
+      const coreRadius = baseRadius * (1 - p) * 0.22;
+      if (coreRadius > 0.5) {
+        ctx.fillStyle = '#ffd43b';
+        ctx.beginPath();
+        ctx.arc(px, py, coreRadius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      const blinkOn = Math.floor(t / 0.08) % 2 === 0;
+      if (!blinkOn) {
+        return;
+      }
+
+      ctx.strokeStyle = '#ffe694';
+      ctx.lineCap = 'round';
+      const burstBase = tile * (0.45 + p * 0.6);
+      for (let i = 0; i < 3; i += 1) {
+        const offsetY = (i - 1) * tile * 0.14;
+        const len = burstBase * (1 - i * 0.18);
+        ctx.lineWidth = Math.max(1.2, tile * (0.12 - i * 0.02));
+        ctx.beginPath();
+        ctx.moveTo(px - tile * 0.12, py + offsetY);
+        ctx.lineTo(px - len, py + offsetY);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(px + tile * 0.12, py + offsetY);
+        ctx.lineTo(px + len, py + offsetY);
+        ctx.stroke();
+      }
     }
 
     drawGhosts() {
       const ctx = this.ctx;
       const tile = this.layout.tilePx;
-      const frightened = this.powerTimer > 0;
+      const frightened = this.isFrightenedEdible();
 
       for (let i = 0; i < this.ghosts.length; i += 1) {
         const g = this.ghosts[i];

@@ -23,6 +23,10 @@ A browser-based collection of mini-games built with plain HTML/CSS/JavaScript an
 - `games/pacman/maze_validator.js`: PacMan maze validation script (walkability/connectivity checks).
 - `games/pacman/pacman.js`: PacMan implementation.
 - `games/pacman/GAME_SPEC.md`: PacMan-specific rules/spec.
+- `games/frogger/frogger.js`: Frogger implementation.
+- `games/frogger/GAME_SPEC.md`: Frogger-specific rules/spec.
+- `games/snake/snake.js`: Snake implementation.
+- `games/snake/GAME_SPEC.md`: Snake-specific rules/spec.
 - `games/sokoban/sokoban.js`: Sokoban implementation.
 - `games/sokoban/GAME_SPEC.md`: Sokoban-specific rules/spec.
 - `games/xonix/xonix.js`: Xonix implementation.

@@ -67,8 +67,8 @@
     if (playerCount !== 1) {
       return { valid: false, reason: 'Maze must contain exactly one player spawn (P).' };
     }
-    if (ghostCount < 1) {
-      return { valid: false, reason: 'Maze must contain at least one ghost spawn (G).' };
+    if (ghostCount !== 4) {
+      return { valid: false, reason: 'Maze must contain exactly four ghost spawns (G).' };
     }
     if (pelletCount < 1) {
       return { valid: false, reason: 'Maze must contain at least one pellet (.) or power pellet (o).' };

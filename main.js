@@ -6,10 +6,12 @@
   const AsteroidsGame = ns.AsteroidsGame;
   const GalaxyGame = ns.GalaxyGame;
   const PacmanGame = ns.PacmanGame;
+  const FroggerGame = ns.FroggerGame;
+  const SnakeGame = ns.SnakeGame;
   const SokobanGame = ns.SokobanGame;
   const XonixGame = ns.XonixGame;
 
-  if (!GameManager || !TetrisGame || !ArkanoidGame || !AsteroidsGame || !GalaxyGame || !PacmanGame || !SokobanGame || !XonixGame) {
+  if (!GameManager || !TetrisGame || !ArkanoidGame || !AsteroidsGame || !GalaxyGame || !PacmanGame || !FroggerGame || !SnakeGame || !SokobanGame || !XonixGame) {
     throw new Error('Main dependencies are missing. Check script loading order in index.html.');
   }
 
@@ -32,6 +34,8 @@
   manager.registerGame(new AsteroidsGame());
   manager.registerGame(new GalaxyGame());
   manager.registerGame(new PacmanGame());
+  manager.registerGame(new FroggerGame());
+  manager.registerGame(new SnakeGame());
   manager.registerGame(new SokobanGame());
   manager.registerGame(new XonixGame());
   manager.start();
