@@ -10,8 +10,10 @@ A browser-based collection of mini-games built with plain HTML/CSS/JavaScript an
 - `test_tetris.html`: standalone Tetris debug page using the same Tetris game script.
 - `test_arkanoid.html`: standalone Arkanoid debug page using the same Arkanoid game script.
 - `core/game_manager.js`: game registry, hash routing, lifecycle switching.
+- `core/consts.js`: shared global constants/configuration registry (`window.Minigames.CONSTS`).
 - `core/storage.js`: localStorage helper utilities.
 - `core/canvas_utils.js`: DPR-aware canvas resize helper.
+- `core/crt_renderer.js`: shared CRT post-processing renderer (hidden game canvas -> visible screen canvas).
 - `games/tetris/tetris.js`: Tetris implementation.
 - `games/tetris/GAME_SPEC.md`: Tetris-specific rules/spec.
 - `games/arkanoid/arkanoid.js`: Arkanoid implementation.
@@ -25,6 +27,8 @@ A browser-based collection of mini-games built with plain HTML/CSS/JavaScript an
 - `games/pacman/GAME_SPEC.md`: PacMan-specific rules/spec.
 - `games/frogger/frogger.js`: Frogger implementation.
 - `games/frogger/GAME_SPEC.md`: Frogger-specific rules/spec.
+- `games/pong/pong.js`: Pong implementation.
+- `games/pong/GAME_SPEC.md`: Pong-specific rules/spec.
 - `games/snake/snake.js`: Snake implementation.
 - `games/snake/GAME_SPEC.md`: Snake-specific rules/spec.
 - `games/sokoban/sokoban.js`: Sokoban implementation.
@@ -36,8 +40,9 @@ A browser-based collection of mini-games built with plain HTML/CSS/JavaScript an
 ## Architecture
 - Single shared shell: `index.html` + `style.css`.
 - Core orchestration: `GameManager` + in-memory game registry + hash router.
+- Shared render pipeline: game draws to hidden canvas, frame is downscaled to a low-res intermediate buffer, then `CrtRenderer` applies JS CRT post-processing and outputs to visible canvas.
 - All core/game scripts are loaded eagerly via classic `<script src="...">` tags (no dynamic loading by hash).
-- Script order is mandatory: `core/*` first, then `games/*`, then `main.js`.
+- Script order is mandatory: `core/consts.js`, `core/storage.js`, `core/canvas_utils.js`, `core/crt_renderer.js`, `core/game_manager.js`, then `games/*`, then `main.js`.
 - One shared canvas on the main page. Active game owns rendering and input while running.
 
 ## Game Contract (Required)
@@ -48,12 +53,15 @@ Each game is a class/object that implements:
 - `getTitle(): string`
   - Human-readable title for menu display.
 - `run(canvas: HTMLCanvasElement): void`
-  - Starts game loop, input subscriptions, and rendering.
+  - Starts game loop, input subscriptions, and rendering to provided game canvas.
   - Must support repeated calls after `stop()`.
 - `stop(): void`
   - Stops RAF/timers and unsubscribes listeners.
   - Must be idempotent.
   - Leaves canvas in clean/neutral state.
+- `render(): void`
+  - Draws current frame into game canvas.
+  - Must be safe for extra calls from shared CRT wrapper loop.
 
 ## Routing and Lifecycle
 - Hash format: `#<gameName>`.
@@ -80,15 +88,20 @@ Rules:
 Shared helper in `core/canvas_utils.js`:
 - Resize canvas to parent display size.
 - Apply DPR scaling (`devicePixelRatio`) so drawing coordinates remain in CSS pixels.
+- Offscreen game canvas can reference visible display canvas via `canvas.__displaySourceCanvas` for size sync.
 - Keep rendering robust across window/container resize.
+- CRT post-processing (including low-res pre-scale, grain/scanline/mask, and curvature pass) is applied by shared `core/crt_renderer.js` and may be additionally decorated by shell CSS overlays.
+- CRT rendering parameters are centralized in `core/consts.js` (`window.Minigames.CONSTS.RENDER.CRT`).
 
 ## File and Script Conventions
 - Classic browser scripts only (`<script src="...">`), no module syntax.
 - No build tools, no TypeScript, no external dependencies.
 - Keep files small and focused.
 - Shared global namespace is `window.Minigames` for cross-file contracts.
+- Global cross-game constants live in `window.Minigames.CONSTS` (defined in `core/consts.js`).
 - Avoid arbitrary globals outside `window.Minigames`; entry points are `main.js`, `test_tetris.html`, and `test_arkanoid.html`.
 - Canvas rendering only (2D context) for games.
+- Games must not implement their own CRT post-processing; final CRT transform is centralized in `core/crt_renderer.js`.
 
 ## How to Add a New Game
 1. Create folder `games/<gameName>/`.

@@ -42,6 +42,7 @@ Classic single-player Tetris implemented on Canvas 2D.
 - Canvas sizing uses shared DPR-aware resize utility from `core/canvas_utils.js`.
 - Playfield and side panel (score, lines, best score, controls hint) are rendered in CSS pixel coordinates.
 - Colors are code-defined; no external assets.
+- Final visible frame is post-processed by shared CRT pipeline from `core/crt_renderer.js`.
 
 ## Persistence
 - Namespace: `minigames:tetris:*`.

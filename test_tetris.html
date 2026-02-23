@@ -20,16 +20,25 @@
       </main>
     </div>
 
+    <script src="./core/consts.js"></script>
     <script src="./core/storage.js"></script>
     <script src="./core/canvas_utils.js"></script>
+    <script src="./core/crt_renderer.js"></script>
     <script src="./games/tetris/tetris.js"></script>
     <script>
       const canvas = document.getElementById('tetris-canvas');
+      const crt = new window.Minigames.CrtRenderer({ screenCanvas: canvas });
+      const gameCanvas = crt.getGameCanvas();
       const tetris = new window.Minigames.TetrisGame();
-      tetris.run(canvas);
+      crt.setRenderHook(() => {
+        tetris.render();
+      });
+      crt.start();
+      tetris.run(gameCanvas);
 
       window.addEventListener('beforeunload', () => {
         tetris.stop();
+        crt.stop();
       });
     </script>
   </body>

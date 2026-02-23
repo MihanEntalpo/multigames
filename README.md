@@ -6,8 +6,10 @@
 - Единая оболочка: `index.html` + `style.css`.
 - Менеджер игр и hash-роутинг: `core/game_manager.js`.
 - Общие утилиты:
+  - `core/consts.js` (глобальные константы проекта в `window.Minigames.CONSTS`)
   - `core/storage.js` (`localStorage` c namespace `minigames:<game>:<suffix>`)
   - `core/canvas_utils.js` (DPR-aware resize)
+  - `core/crt_renderer.js` (общий CRT JS-постпроцесс: hidden canvas -> screen canvas)
 - Игры:
   - `tetris`
   - `arkanoid`
@@ -15,6 +17,7 @@
   - `galaxy`
   - `pacman`
   - `frogger`
+  - `pong`
   - `snake`
   - `sokoban`
   - `xonix`
@@ -42,9 +45,11 @@
 ├─ SPEC.md
 ├─ AGENTS.md
 ├─ core/
+│  ├─ consts.js
 │  ├─ game_manager.js
 │  ├─ storage.js
-│  └─ canvas_utils.js
+│  ├─ canvas_utils.js
+│  └─ crt_renderer.js
 └─ games/
    ├─ tetris/
    ├─ arkanoid/
@@ -52,6 +57,7 @@
    ├─ galaxy/
    ├─ pacman/
    ├─ frogger/
+   ├─ pong/
    ├─ snake/
    ├─ sokoban/
    └─ xonix/

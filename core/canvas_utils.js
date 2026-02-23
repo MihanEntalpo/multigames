@@ -2,11 +2,15 @@
   const ns = (global.Minigames = global.Minigames || {});
 
   function resizeCanvasToDisplaySize(canvas, ctx, options = {}) {
+    const sourceCanvas = options.displayCanvas ?? canvas.__displaySourceCanvas ?? null;
+    const sourceParent = sourceCanvas?.parentElement ?? null;
     const parent = canvas.parentElement;
     const width = Math.max(
       1,
       Math.floor(
         options.width ??
+          sourceParent?.clientWidth ??
+          sourceCanvas?.clientWidth ??
           parent?.clientWidth ??
           canvas.clientWidth ??
           window.innerWidth
@@ -16,6 +20,8 @@
       1,
       Math.floor(
         options.height ??
+          sourceParent?.clientHeight ??
+          sourceCanvas?.clientHeight ??
           parent?.clientHeight ??
           canvas.clientHeight ??
           window.innerHeight

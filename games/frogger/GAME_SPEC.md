@@ -43,6 +43,7 @@ Scoring:
 - Game uses provided canvas only.
 - World is grid-based: safe rows, road rows, river rows, frog, vehicles, carriers, and home slots are drawn by code.
 - Canvas uses shared DPR-aware resize utility from `core/canvas_utils.js`.
+- Final visible frame is post-processed by shared CRT pipeline from `core/crt_renderer.js`.
 
 ## Persistence
 - Namespace: `minigames:frogger:*`.

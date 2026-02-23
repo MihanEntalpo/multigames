@@ -1,11 +1,13 @@
 (function bootstrapGameManager(global) {
   const ns = (global.Minigames = global.Minigames || {});
+  const CrtRenderer = ns.CrtRenderer || null;
 
   class GameManager {
     constructor({ canvas, menuElement, statusElement }) {
       this.canvas = canvas;
       this.menuElement = menuElement;
       this.statusElement = statusElement;
+      this.crtRenderer = CrtRenderer ? new CrtRenderer({ screenCanvas: canvas }) : null;
 
       this.gamesByName = new Map();
       this.gameOrder = [];
@@ -19,6 +21,12 @@
     registerGame(game) {
       if (!game || typeof game.getName !== 'function') {
         throw new Error('Game object must implement getName().');
+      }
+      if (typeof game.run !== 'function' || typeof game.stop !== 'function') {
+        throw new Error('Game object must implement run(canvas) and stop().');
+      }
+      if (typeof game.render !== 'function') {
+        throw new Error('Game object must implement render() for CRT wrapper compatibility.');
       }
 
       const name = game.getName();
@@ -36,12 +44,18 @@
     start() {
       this.renderMenu();
       window.addEventListener('hashchange', this.onHashChange);
+      if (this.crtRenderer) {
+        this.crtRenderer.start();
+      }
       this.routeFromHash();
     }
 
     stop() {
       window.removeEventListener('hashchange', this.onHashChange);
       this.stopActiveGame();
+      if (this.crtRenderer) {
+        this.crtRenderer.stop();
+      }
     }
 
     onHashChange() {
@@ -79,11 +93,22 @@
       this.activeGameName = hashValue;
       this.setMenuSelection(hashValue);
       this.setStatus('');
-      game.run(this.canvas);
+      const targetCanvas = this.crtRenderer ? this.crtRenderer.getGameCanvas() : this.canvas;
+      if (this.crtRenderer) {
+        this.crtRenderer.setRenderHook(() => {
+          if (this.activeGame && typeof this.activeGame.render === 'function') {
+            this.activeGame.render();
+          }
+        });
+      }
+      game.run(targetCanvas);
     }
 
     stopActiveGame() {
       if (!this.activeGame) {
+        if (this.crtRenderer) {
+          this.crtRenderer.setRenderHook(null);
+        }
         return;
       }
 
@@ -92,6 +117,9 @@
       } finally {
         this.activeGame = null;
         this.activeGameName = null;
+        if (this.crtRenderer) {
+          this.crtRenderer.setRenderHook(null);
+        }
       }
     }
 
@@ -129,6 +157,11 @@
     }
 
     clearCanvas() {
+      if (this.crtRenderer) {
+        this.crtRenderer.clear();
+        return;
+      }
+
       const ctx = this.canvas.getContext('2d');
       if (!ctx) {
         return;

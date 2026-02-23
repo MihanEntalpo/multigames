@@ -39,6 +39,7 @@ Classic Snake on Canvas 2D. The player controls a snake that collects apples, gr
 - Game uses provided canvas only.
 - Draws board, grid, snake, apple, obstacles, and HUD via code.
 - Canvas sizing uses shared DPR-aware utility from `core/canvas_utils.js`.
+- Final visible frame is post-processed by shared CRT pipeline from `core/crt_renderer.js`.
 
 ## Persistence
 - Namespace: `minigames:snake:*`.

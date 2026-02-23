@@ -58,6 +58,7 @@ Arcade maze game (Pac-Man-like) on Canvas 2D. The player navigates a maze, eats 
 - During `dying`, PacMan death animation is shown in classic style: face-up, mouth opens, inverts/collapses, then side burst lines blink.
 - House door is rendered as a visible barrier line above ghost house.
 - Canvas sizing uses shared DPR-aware utility from `core/canvas_utils.js`.
+- Final visible frame is post-processed by shared CRT pipeline from `core/crt_renderer.js`.
 
 ## Maze Validation (Required)
 - Every newly created maze template must be validated by `games/pacman/maze_validator.js`.

@@ -34,6 +34,7 @@ Classic single-player Asteroids on Canvas 2D. The player pilots a ship, destroys
 - Ship, asteroids, bullets, and HUD are vector-like primitives.
 - Canvas sizing uses shared DPR-aware utility from `core/canvas_utils.js`.
 - Objects wrap around screen edges.
+- Final visible frame is post-processed by shared CRT pipeline from `core/crt_renderer.js`.
 
 ## Persistence
 - Namespace: `minigames:asteroids:*`.

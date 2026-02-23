@@ -34,6 +34,7 @@ Arcade shooter on Canvas 2D. The player controls a bottom cannon and shoots upwa
 - Game uses the provided canvas only (2D context).
 - Draws star background, player cannon, alien formation, bullets, and HUD.
 - Canvas sizing uses shared DPR-aware utility from `core/canvas_utils.js`.
+- Final visible frame is post-processed by shared CRT pipeline from `core/crt_renderer.js`.
 
 ## Persistence
 - Namespace: `minigames:galaxy:*`.

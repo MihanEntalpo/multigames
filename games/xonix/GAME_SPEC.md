@@ -34,6 +34,7 @@ Arcade territory-capture game (Xonix-like) on Canvas 2D. The player moves along 
 - Game uses provided canvas only.
 - Uses grid-based playfield with side HUD.
 - Canvas sizing uses shared DPR-aware utility from `core/canvas_utils.js`.
+- Final visible frame is post-processed by shared CRT pipeline from `core/crt_renderer.js`.
 
 ## Persistence
 - Namespace: `minigames:xonix:*`.

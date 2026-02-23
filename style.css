@@ -8,6 +8,8 @@
   --accent: #f0a33f;
   --accent-strong: #ffd38a;
   --canvas-bg: #08111d;
+  --crt-scan-opacity: 0.34;
+  --crt-vignette-opacity: 0.48;
 }
 
 * {
@@ -110,6 +112,61 @@ body {
   width: 100%;
   min-height: 520px;
   height: min(72vh, 760px);
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #02050a;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+    inset 0 0 42px rgba(0, 0, 0, 0.78);
+  isolation: isolate;
+}
+
+.canvas-wrap::before,
+.canvas-wrap::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.canvas-wrap::before {
+  z-index: 3;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.2) 0 1px,
+      rgba(255, 255, 255, 0.02) 1px 2px,
+      rgba(0, 0, 0, 0.1) 2px 3px
+    ),
+    repeating-linear-gradient(
+      to right,
+      rgba(255, 0, 0, 0.06) 0 2px,
+      rgba(0, 255, 0, 0.045) 2px 4px,
+      rgba(0, 110, 255, 0.06) 4px 6px
+    );
+  opacity: var(--crt-scan-opacity);
+  mix-blend-mode: screen;
+  animation: crt-flicker 140ms steps(2, end) infinite;
+}
+
+.canvas-wrap::after {
+  z-index: 4;
+  background:
+    linear-gradient(
+      155deg,
+      rgba(255, 255, 255, 0.11) 0%,
+      rgba(255, 255, 255, 0.03) 12%,
+      rgba(255, 255, 255, 0) 36%,
+      rgba(255, 255, 255, 0) 70%,
+      rgba(255, 255, 255, 0.025) 86%,
+      rgba(255, 255, 255, 0) 100%
+    ),
+    radial-gradient(
+      135% 100% at 50% 50%,
+      rgba(0, 0, 0, 0) 56%,
+      rgba(0, 0, 0, var(--crt-vignette-opacity)) 100%
+    );
 }
 
 canvas {
@@ -118,6 +175,31 @@ canvas {
   height: 100%;
   background: radial-gradient(circle at 20% 15%, #172f45, var(--canvas-bg) 55%);
   border-radius: 10px;
+  position: relative;
+  z-index: 2;
+  filter: contrast(1.06) saturate(1.03) brightness(0.96);
+}
+
+@keyframes crt-flicker {
+  0% {
+    opacity: calc(var(--crt-scan-opacity) + 0.03);
+  }
+  33% {
+    opacity: calc(var(--crt-scan-opacity) - 0.05);
+  }
+  66% {
+    opacity: calc(var(--crt-scan-opacity) + 0.01);
+  }
+  100% {
+    opacity: calc(var(--crt-scan-opacity) - 0.03);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .canvas-wrap::before {
+    animation: none;
+    opacity: calc(var(--crt-scan-opacity) - 0.05);
+  }
 }
 
 .page-link {

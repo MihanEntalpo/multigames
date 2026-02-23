@@ -33,6 +33,7 @@ Single-player Arkanoid (brick breaker) on Canvas 2D. The player controls a paddl
 - Game draws playfield border, bricks, paddle, ball, and HUD (score/lives/best score).
 - Canvas size is managed through shared DPR-aware utility from `core/canvas_utils.js`.
 - Layout scales to available canvas size while preserving gameplay proportions.
+- Final visible frame is post-processed by shared CRT pipeline from `core/crt_renderer.js`.
 
 ## Persistence
 - Namespace: `minigames:arkanoid:*`.

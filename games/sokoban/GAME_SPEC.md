@@ -35,6 +35,7 @@ Single-player Sokoban puzzle on Canvas 2D. The player moves in a grid and pushes
 - Draws board, walls, targets, boxes, player, and side HUD.
 - Board is centered in a dedicated area and scales by cell size.
 - Canvas sizing uses shared DPR-aware utility from `core/canvas_utils.js`.
+- Final visible frame is post-processed by shared CRT pipeline from `core/crt_renderer.js`.
 
 ## Persistence
 - Namespace: `minigames:sokoban:*`.
